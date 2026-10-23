@@ -1,0 +1,241 @@
+STOCKS.NEWS | Handoff técnico para o Codex
+1
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+1. Objetivo, decisões e estado atual
+Desenvolver o ReportStock: um sistema PHP que coleta dados financeiros e corporativos pelas APIs,
+armazena os retornos e os dados normalizados no MySQL e utiliza a Claude API para gerar seções de
+relatórios sobre empresas listadas.
+O PDF Vuzix Waveguides Extending into Al Data-Center.pdf (19 páginas) é referência editorial e visual. Não
+fixar valores, nomes, programas ou particularidades da Vuzix no código.
+Premissas obrigatórias
+• Toda a informação de pesquisa virá das APIs da QuoteMedia, acessadas pelos métodos Stocks.News
+disponíveis. Não coletar diretamente documentos SEC, PDFs externos, websites ou outras fontes; não
+implementar scraping.
+• Conteúdo textual retornado pelas APIs pode ser analisado pela Claude. O modelo deve usar apenas os
+dados enviados e resultados aprovados, sem completar lacunas com conhecimento próprio.
+• Não inventar endpoints, parâmetros, campos, cobertura ou credenciais. Os exemplos da planilha não são
+dados atuais nem contratos completos de produção.
+• Patrocínio, editor, revisor e aprovação são configurações operacionais fornecidas pela empresa; não são
+informações que a IA deve inventar.
+Padrão de implementação
+• PHP procedural/estruturado; sem classes e sem funções próprias sem autorização. Não usar try/catch. Usar
+os recursos existentes de conexão, execução e logs.
+• Banco MySQL/MariaDB. Preservar estilo e formatação dos arquivos existentes; entregar os arquivos
+alterados completos.
+• Inspecionar primeiro o repositório, suas instruções locais e as versões efetivamente instaladas. Não aplicar
+alterações destrutivas nem presumir que os scripts de planejamento foram executados.
+Estado confirmado
+Foram preparados desenhos, inventários e SQLs; a aplicação ainda não foi implementada nesta conversa.
+Não foram feitas chamadas reais às APIs. Os SQLs foram conferidos estruturalmente, mas não executados
+em MySQL. Não há confirmação de quais scripts o usuário já aplicou.
+A proposta antiga de 22 tabelas e os prompts baseados em documentos externos foram superados. A
+referência SQL mais recente é atualizar_reportStock_longId.sql; ainda precisa ser comparada com a
+estrutura real do banco.
+
+STOCKS.NEWS | Handoff técnico para o Codex
+2
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+2. Banco de dados e vínculos por longId
+Banco de referência: reportStock. Não declarar FOREIGN KEY, REFERENCES ou cascatas. As relações são
+mantidas pela aplicação.
+Convenção obrigatória
+Cada tabela utiliza id numérico AUTO_INCREMENT como chave primária e longId VARCHAR(100) NOT NULL
+DEFAULT ''. O longId é gerado e preenchido pela aplicação; não é o identificador do fornecedor.
+O campo de vínculo tem o nome da tabela relacionada, sempre VARCHAR(100) NOT NULL DEFAULT '',
+contendo o longId do registro de destino. Não utilizar id numérico como vínculo.
+Tabela / campo
+Valor armazenado
+reports.companies
+companies.longId
+report_qm_requests.reports
+reports.longId
+report_qm_requests.report_qm_endpoints
+report_qm_endpoints.longId
+report_data_evidence.report_data_points
+report_data_points.longId
+report_data_evidence.report_qm_requests
+report_qm_requests.longId
+Tabelas originais de apresentação
+companies; reports; report_market_data; report_financials; report_governance; report_ecosystem_peers;
+report_narrative_sections.
+Doze tabelas de suporte propostas
+Grupo
+Tabelas
+Coleta
+report_qm_endpoints; report_qm_requests
+Geração
+report_prompt_templates; report_generation_runs
+Fatos e cálculos
+report_data_points; report_data_evidence; report_calculation_inputs
+Seções
+report_section_catalog; report_sections; report_section_data_points
+Requisitos e problemas
+report_data_requirements; report_validation_issues
+Em report_calculation_inputs, report_data_points contém o longId do resultado e report_data_points_input
+contém o longId de uma entrada da mesma tabela. input_role distingue o papel de cada entrada.
+O SQL recente propõe 9 conjuntos, 30 blocos de montagem, 194 requisitos e 11 templates. São cadastros de
+planejamento, não cobertura comprovada ou prompts aprovados. Os 30 blocos detalham as 16 seções
+editoriais.
+Conferir referências antigas companyId/reportId versus companies/reports e compatibilidade do código.
+CREATE TABLE IF NOT EXISTS não converte tabelas antigas; a versão com FKs numéricas requer migração
+específica se já tiver sido aplicada.
+
+STOCKS.NEWS | Handoff técnico para o Codex
+3
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+3. Métodos de referência e pendências
+Arquivo: Stocks.News Mappings (2).xlsx. Usar especificamente a aba OUR API. Os exemplos usam POST com
+JSON e seleção pelo campo fields. Autenticação e contratos completos devem ser conferidos no projeto e em
+respostas reais.
+Base por símbolo: https://api.stocks.news/quotes/realtime/{SYMBOL}/
+Método
+Finalidade
+overview
+Identificação, classificação, fundamentos e cotação.
+SymbolsByExchange
+Bolsa, moeda, qmIdentifier, openFigi, listagem e classificação.
+fundamentals
+Ações, capitalização, indicadores, 52 semanas, médias de volume.
+priceData
+Cotação, variações, volume e horários.
+fullHistory
+Preços e volumes históricos.
+financial
+Campos de demonstração do resultado (DRE).
+earnings
+Resultados e informações de divulgação disponíveis.
+executives
+Nomes, cargos, conselho e remuneração.
+dividends
+Dividendos, yield, payout e datas.
+charts / getIntervals / intraDay
+Séries com intervalo e/ou movimentação intradiária.
+bulk/summary
+Resumo por lote de símbolos para peers.
+AllSymbolsByExchange
+Descoberta e cadastro de instrumentos.
+Rota de lote apresentada: https://api.stocks.news/quotes/realtime/bulk/summary. Para charts, os exemplos
+incluem interval, start e end; não presumir que esses parâmetros se aplicam aos demais métodos.
+Não comprovado pela aba
+• Métodos específicos de balanço, fluxo de caixa, ownership, short interest, perfil descritivo completo e
+notícias/conteúdo ainda precisam ser identificados. Não concluir que são indisponíveis.
+• Conferir nomes exatos por método: marketcap/marketCap; prevClose/previousClose; ebtida/eBITDA;
+shareVolume/sharevolume. Não aplicar aliases indiscriminados.
+• Validar paginação, seleção dos períodos, unidades, ajuste de preços, disponibilidade histórica e
+identificação das datas. Usar histórico para preço de uma data passada, nunca substituir silenciosamente
+por cotação atual.
+
+STOCKS.NEWS | Handoff técnico para o Codex
+4
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+4. Relatório e inventário de dados
+Dezesseis seções editoriais
+1. Identificação e capa; 2. Sobre a empresa; 3. Investment Highlights; 4. Investment Thesis; 5. Tecnologia e
+produtos; 6. Comercialização e catalisadores; 7. Setor e competição; 8. Financial Snapshot; 9. Gestão e
+conselho; 10. Ownership; 11. Propriedade intelectual; 12. Financial Overview; 13. Demonstrações
+financeiras; 14. Desempenho da ação; 15. Riscos; 16. Disclosures e revisão.
+Dados necessários
+Grupo
+Itens principais
+Identificação
+Empresa, símbolo, bolsa, moeda, identificadores, setor, indústria, listagem e perfil
+disponível.
+Mercado
+Preço/tipo/data/hora; 52 semanas; ações em circulação; market cap; volume e janela das
+médias.
+DRE
+Receita, custos, lucro bruto, P&D, despesas, resultado operacional/líquido, juros, impostos,
+EPS e ações médias.
+Balanço e caixa
+Caixa, ativos/passivos circulantes/totais, dívida, patrimônio, preferred; fluxos
+operacional/investimento/financiamento, capex e caixa inicial/final.
+Capital e resultados
+Emissões, captação efetiva/capacidade, conversões, dividendos, exercício/trimestre e
+divulgação.
+Gestão e ownership
+Nomes, cargos, conselho, remuneração; titulares, classes, ações, percentuais, datas, bases,
+opções/conversões e sobreposição.
+Conteúdo corporativo
+Produtos, especificações/unidades, capacidades, clientes/parceiros, contratos, pedidos,
+estágios, eventos, marcos e datas.
+Setor, peers e IP
+Mercado/projeções com autor e premissas; nome/papel dos peers, receita FY e market cap;
+patentes, pedidos, licenças e know-how.
+Riscos
+Descrição, evidência, dependências, impacto e mitigantes divulgados.
+Metadados e cobertura temporal
+Cada fato precisa da requisição de origem, campo/trecho do retorno, empresa/entidade, contexto, período,
+data de referência, unidade, escala, moeda, tipo (reportado/extraído/calculado), status e motivo da
+ausência.
+Proposta ainda sujeita à revisão: três exercícios anuais; último trimestre e comparável do ano anterior;
+acumulados correspondentes; duas datas de balanço. Para mercado, data escolhida e janela de 52 semanas,
+respeitando o calendário fiscal do emissor.
+
+STOCKS.NEWS | Handoff técnico para o Codex
+5
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+5. Fluxo funcional, cálculos e validação
+Sequência de processamento
+1. Selecionar empresa, data do preço e cutoff da pesquisa; localizar/cadastrar companies e criar reports.
+2. Consultar requisitos e conjuntos necessários; montar chamadas dos métodos configurados.
+3. Salvar cada resposta original em report_qm_requests, com parâmetros sem credenciais, status HTTP,
+horários, paginação e erros.
+4. Normalizar dados estruturados no PHP em report_data_points; criar report_data_evidence com origem e
+localizador.
+5. Usar Claude para extrações textuais necessárias. Registrar entradas, resposta, modelo, tokens/custo
+quando disponíveis e tentativas em report_generation_runs.
+6. Validar evidências e dados; registrar divergências em report_validation_issues e aprovar os fatos
+utilizáveis.
+7. Executar cálculos no PHP, salvar resultados com fórmula e vincular entradas em report_calculation_inputs.
+8. Gerar seções a partir dos fatos aprovados; gravar report_sections e report_section_data_points.
+9. Preencher tabelas de apresentação, renderizar tabelas/gráficos, conferir e submeter à revisão.
+10. Publicar a versão aprovada; preservar a publicação anterior e retomar falhas apenas na etapa afetada.
+Cálculos determinísticos no PHP
+Market cap = preço × ações. Variação versus máxima/mínima = (preço / nível - 1) × 100. Crescimento =
+(atual / comparável - 1) × 100. Margens = resultado / receita × 100. Capital de giro = ativo circulante -
+passivo circulante. TTM = FY anterior - YTD comparável anterior + YTD atual. SI% = short shares /
+denominador × 100. Days to cover = short shares / volume médio da base correspondente.
+Validações essenciais
+Não confundir anual/trimestral/acumulado, moedas e escalas, ações médias/outstanding ou volume de
+negociação/base de SI. Respeitar cutoff e disponibilidade pública. Zero exige evidência. Ownership pode ter
+bases sobrepostas. Capacidade ATM não é captação. Amostra, avaliação, design-in, qualificação e produção
+são estágios distintos.
+Extrair fatos e redigir texto são execuções separadas. Tese e destaques vêm depois das demais análises e
+riscos. O gráfico de ações do modelo mostra três níveis de referência, não uma série histórica contínua.
+
+STOCKS.NEWS | Handoff técnico para o Codex
+6
+STOCKS.NEWS / CONTEXTO PARA O CODEX / 22.10.2026
+6. Como iniciar o desenvolvimento
+Limite atual: revisão antes dos prompts
+O chefe solicitou: “Start putting together the structure & list of data items that we need. We can review when
+you’re ready before you actually start building the prompts”.
+O escopo e o inventário foram preparados para revisão; a aprovação ainda não foi confirmada. Os templates
+existentes são rascunhos anteriores. Não construir ou executar os prompts como se estivessem aprovados.
+Iniciar pela infraestrutura de coleta, persistência e validação, deixando a geração Claude separada.
+Primeira entrega solicitada ao Codex
+1. Ler instruções locais e inspecionar o repositório, conexão, logs, execução e configurações já existentes.
+2. Inspecionar o schema real e comparar com atualizar_reportStock_longId.sql. Detectar versões anteriores,
+nomes de vínculos e dados existentes antes de propor migração.
+3. Ler a aba OUR API e localizar a autenticação existente sem expor segredos. Não pedir credenciais já
+presentes na configuração.
+4. Implementar um primeiro fluxo completo: empresa + identificação/mercado + resposta original +
+normalização + evidência, usando métodos comprovados e evitando chamadas duplicadas.
+5. Validar com uma empresa, sem valores fictícios. Se não houver acesso real, distinguir validação local de
+integração e registrar o bloqueio exato.
+6. Permitir reexecução sem duplicação indevida e recuperação de falhas. Preservar tentativas e respostas
+anteriores.
+7. Entregar arquivos completos, resumo das mudanças, verificações realizadas e pendências de cobertura.
+Não alterar dados de produção de forma destrutiva.
+Arquivos a disponibilizar ao Codex
+• atualizar_reportStock_longId.sql: SQL de referência mais recente; não assumir que já foi aplicado.
+• Stocks.News Mappings (2).xlsx: referência de métodos, aba OUR API.
+• Vuzix Waveguides Extending into Al Data-Center.pdf: referência de estrutura e apresentação.
+• StocksNews_Estrutura_Dados_PT-BR.pdf e StocksNews_Report_Structure_Data_EN.pdf: documentos de
+revisão do escopo.
+Os arquivos precisam ser anexados ou colocados no ambiente do Codex; este resumo não transfere seus
+conteúdos nem garante que estarão disponíveis em outra sessão.
+Decisões ainda em aberto
+Seções obrigatórias/opcionais; profundidade histórica; série de preços versus níveis; seleção de peers;
+tratamento das lacunas; métodos ainda não identificados; disclosures e revisor; schema efetivamente
+instalado e aprovação para iniciar os prompts.

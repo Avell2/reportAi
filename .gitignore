@@ -1,0 +1,29 @@
+# Local configuration with secrets and API keys
+config/local.php
+*/config/local.php
+*.local.php
+.env
+.env.*
+
+# Generated reports, cache, and session/lock data
+var/*
+!var/.gitkeep
+
+# Operating system files
+.DS_Store
+*/.DS_Store
+**/.DS_Store
+Thumbs.db
+
+# Virtual environments & Python cache
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+
+# Logs and temporary files
+*.log
+*.tmp
+*.lock
